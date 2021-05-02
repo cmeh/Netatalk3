@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: afp.conf
-.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
 .\"      Date: 27 Dec 2016
-.\"    Manual: @NETATALK_VERSION@
-.\"    Source: @NETATALK_VERSION@
+.\"    Manual: Netatalk AFP fileserver Manual
+.\"    Source: Netatalk
 .\"  Language: English
 .\"
-.TH "AFP\&.CONF" "5" "27 Dec 2016" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
+.TH "AFP\&.CONF" "5" "27 Dec 2016" "Netatalk" "Netatalk AFP fileserver Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -46,7 +46,7 @@ The file consists of sections and parameters\&. A section begins with the name o
 .RS 4
 .\}
 .nf
-    \fIname\fR = \fIvalue \fR
+\fIname\fR = \fIvalue \fR
     
 .fi
 .if n \{\
@@ -62,7 +62,7 @@ Only the first equals sign in a parameter is significant\&. Whitespace before or
 Any line beginning with a semicolon (\(lq;\(rq) or a hash (\(lq#\(rq) character is ignored, as are lines containing only whitespace\&.
 .PP
 Any line ending in a
-\(lq \e \(rq
+\(lq\e\(rq
 is continued on the next line in the customary UNIX fashion\&.
 .PP
 The values following the equals sign in parameters are all either a string (no quotes needed) or a boolean, which may be given as yes/no, 1/0 or true/false\&. Case is not significant in boolean values, but is preserved in string values\&. Some items such as "file perm"s are numeric\&.
@@ -309,23 +309,6 @@ uam list = \fIuam list\fR \fB(G)\fR
 Space or comma separated list of UAMs\&. (The default is "uams_dhx\&.so uams_dhx2\&.so")\&.
 .sp
 The most commonly used UAMs are:
-.PP
-uams_guest\&.so
-.RS 4
-allows guest logins
-.RE
-.PP
-uams_clrtxt\&.so
-.RS 4
-(uams_pam\&.so or uams_passwd\&.so) Allow logins with passwords transmitted in the clear\&. (legacy)
-.RE
-.PP
-uams_randnum\&.so
-.RS 4
-allows Random Number and Two\-Way Random Number Exchange for authentication (requires a separate file containing the passwords, either @pkgconfdir@/afppasswd file or the one specified via "\fBpasswd file\fR")\&. See
-\fBafppasswd\fR(1)
-for details\&. (legacy)
-.RE
 .PP
 uams_dhx\&.so
 .RS 4
@@ -1000,6 +983,7 @@ mode
 .RS 4
 ACLs are additionally mapped to the UNIX mode of the filesystem object\&.
 .RE
+.sp
 .RE
 .PP
 If you want to be able to display ACLs on the client, you must setup both client and server as part on a authentication domain (directory service, eg LDAP, Open Directory, Active Directory)\&. The reason is, in OS X ACLs are bound to UUIDs, not just uid\*(Aqs or gid\*(Aqs\&. Therefor Netatalk must be able to map every filesystem uid and gid to a UUID so that it can return the server side ACLs which are bound to UNIX uid and gid mapped to OS X UUIDs\&.
@@ -1027,6 +1011,7 @@ sasl
 .RS 4
 SASL\&. Not yet supported !
 .RE
+.sp
 .RE
 .PP
 ldap auth dn = \fIdn\fR \fB(G)\fR
@@ -1112,6 +1097,7 @@ ms\-guid
 .RS 4
 Binary objectGUID from Active Directory
 .RE
+.sp
 .RE
 .PP
 ldap user filter = \fISTRING (default: unused)\fR \fB(G)\fR
@@ -1283,6 +1269,7 @@ file perm = 0660 directory perm =
 .if n \{\
 .RE
 .\}
+.sp
 
 .RE
 .PP
@@ -1521,3 +1508,7 @@ provided charset\&. It is highly recommended to stick to the default UTF\-8\&.
 \fBafp_signature.conf\fR(5),
 \fBextmap.conf\fR(5),
 \fBcnid_metad\fR(8)
+.SH "AUTHOR"
+.PP
+See
+\m[blue]\fBhttps://sourceforge\&.net/p/netatalk/code/ci/master/tree/AUTHORS\fR\m[]

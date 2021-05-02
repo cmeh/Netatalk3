@@ -14,21 +14,24 @@ AC_SUBST(NETATALK_VERSION)
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_PERL
-LT_INIT([dlopen])
+LT_INIT
 
 AC_SYS_LARGEFILE([], AC_MSG_ERROR([AFP 3.x support requires Large File Support.]))
 
-dnl --------------------------------------------------------------------------
-dnl check if dlsym needs to add an underscore, uses libtool macros
-dnl --------------------------------------------------------------------------
-LT_LIB_DLLOAD
-AC_CHECK_FUNCS(dlopen dlsym dlclose)
-LT_FUNC_DLSYM_USCORE
-if test x"$libltdl_cv_need_uscore" = xyes; then
-    AC_DEFINE(DLSYM_PREPEND_UNDERSCORE, 1, [BSD compatibility macro])
+AC_DEFINE(OPEN_NOFOLLOW_ERRNO, ELOOP, errno returned by open with O_NOFOLLOW)
+
+dnl Special checks
+ac_neta_haveatfuncs=yes
+AC_CHECK_FUNCS(openat renameat fstatat unlinkat, , ac_neta_haveatfuncs=no)
+if test x"$ac_neta_haveatfuncs" = x"yes" ; then
+   AC_DEFINE([_ATFILE_SOURCE], 1, AT file source)
+   AC_DEFINE([HAVE_ATFUNCS], 1, whether at funcs are available)
 fi
 
-AC_DEFINE(OPEN_NOFOLLOW_ERRNO, ELOOP, errno returned by open with O_NOFOLLOW)
+dnl Search for necessary libraries
+AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(connect, socket)
+AC_CHECK_FUNCS(getifaddrs) dnl comes after gethostbyname and connect so it picks up the libs
 
 dnl 64bit platform check
 AC_NETATALK_64BIT_LIBS
@@ -39,7 +42,7 @@ AC_NETATALK_CONFIG_DIRS
 dnl Check whether to enable debug code
 AC_NETATALK_DEBUG
 
-dnl Check whethe to disable tickle SIGALARM stuff, which eases debugging
+dnl Check whether to disable tickle SIGALARM stuff, which eases debugging
 AC_NETATALK_DEBUGGING
 
 dnl	Check for libiconv support
@@ -47,9 +50,6 @@ AC_NETATALK_CHECK_ICONV
 
 dnl Check for CNID database backends
 AC_NETATALK_CNID([bdb_required=yes],[bdb_required=no])
-
-dnl Check for optional Zeroconf support
-AC_NETATALK_ZEROCONF
 
 dnl Check for PAM libs
 AC_NETATALK_PATH_PAM
@@ -81,15 +81,8 @@ AC_NETATALK_OVERWRITE_CONFIG
 dnl Check for Extended Attributes support
 AC_NETATALK_EXTENDED_ATTRIBUTES
 
-dnl Check for sendfile()
-AC_NETATALK_SENDFILE
-AC_NETATALK_RECVFILE
-
 dnl Check for libevent
 AC_NETATALK_LIBEVENT
-
-dnl Check for dbus-glib, for AFP stats on dbus
-AC_NETATALK_DBUS_GLIB
 
 dnl netatalk lockfile path
 AC_NETATALK_LOCKFILE
@@ -106,7 +99,6 @@ AC_SUBST(UAMS_PATH)
 
 AM_CONDITIONAL(HAVE_LIBGCRYPT, test x$neta_cv_have_libgcrypt = xyes)
 AM_CONDITIONAL(HAVE_OPENSSL, test x$neta_cv_have_openssl = xyes)
-AM_CONDITIONAL(HAVE_ACLS, test x"$ac_cv_have_acls" = x"yes")
 AM_CONDITIONAL(USE_DHX, test x$neta_cv_compile_dhx = xyes)
 AM_CONDITIONAL(USE_DHX2, test x$neta_cv_compile_dhx2 = xyes)
 AM_CONDITIONAL(USE_PAM_SO, test x$use_pam_so = xyes)
@@ -115,7 +107,6 @@ AM_CONDITIONAL(BUILD_PAM, test x$compile_pam = xyes)
 AM_CONDITIONAL(DEFAULT_HOOK, test x$neta_cv_have_libgcrypt != xyes && test x$neta_cv_have_openssl != xyes)
 AM_CONDITIONAL(USE_BDB, test x$bdb_required = xyes)
 AM_CONDITIONAL(HAVE_ATFUNCS, test x"$ac_neta_haveatfuncs" = x"yes")
-AM_CONDITIONAL(USE_SHADOWPW, test x$shadowpw = xyes)
 
 dnl Enable silent Automake rules if present                                                                           
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -174,11 +165,11 @@ AC_CONFIG_FILES([Makefile
 	man/Makefile
 	man/man1/Makefile
     man/man1/ad.1
-    man/man1/afpstats.1
     man/man1/apple_dump.1
     man/man1/asip-status.pl.1
     man/man1/dbd.1
     man/man1/macusers.1
+    man/man1/megatron.1
     man/man1/netatalk-config.1
     man/man1/uniconv.1
 	man/man5/Makefile
@@ -190,9 +181,6 @@ AC_CONFIG_FILES([Makefile
     man/man8/afpd.8
     man/man8/cnid_dbd.8
     man/man8/cnid_metad.8
-    man/man8/netatalk.8
-	test/Makefile
-	test/afpd/Makefile
 	])
 AC_CONFIG_COMMANDS([default],[chmod a+x distrib/config/netatalk-config contrib/shell_utils/apple_*
 ],[])
