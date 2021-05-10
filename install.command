@@ -22,7 +22,7 @@ make html -j "$cores"
 sudo make install -j "$cores"
 
 # Cleanup
-make distclean -j "$cores"
+make clean -j "$cores"
 if [ -d "autom4te.cache" ]; then rm -Rf autom4te.cache; fi
 
 # Exit gracefully

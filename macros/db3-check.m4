@@ -79,7 +79,7 @@ AC_DEFUN([AC_NETATALK_PATH_BDB],[
 if test "x$bdb_required" = "xyes"; then
     trybdbdir=""
     dobdbsearch=yes
-    bdb_search_dirs="/usr/local /opt/homebrew"
+    bdb_search_dirs="$($BREW --prefix 2>/dev/null)"
     search_subdirs="/ /db6.1 /db6 /db5 /db5.3 /db5.2 /db5.1 /db51 /db5.0 /db50 /db4.8 /db48 /db4.7 /db47 /db4.6 /db46 /db4"
 
     bdbfound=no
@@ -125,7 +125,7 @@ if test "x$bdb_required" = "xyes"; then
                 if test -f "${bdbdir}/include${subdir}/db.h" ; then
                     AC_MSG_RESULT([yes])
 
-                    dnl -- Check if it meets minimun requirement, also return the version
+                    dnl -- Check if it meets minimum requirement, also return the version
                     NETATALK_BDB_HEADER([${bdbdir}/include${subdir}])
 
                     if test ${atalk_cv_bdbheader} != "no"; then
@@ -135,7 +135,15 @@ if test "x$bdb_required" = "xyes"; then
                         CPPFLAGS="-I${bdbdir}/include${subdir} $CPPFLAGS"
                         LDFLAGS="-L$bdblibdir $LDFLAGS"
 
+                        dnl -- Uses version set by NETATALK_BDB_HEADER to try to run
+                        dnl -- a conftest that checks that header/lib version match
+                        dnl -- $shlibpath_var is set by LIBTOOL, its value is
+                        dnl -- LD_LIBRARY_PATH on many platforms. This will be fairly
+                        dnl -- portable hopefully. Reference:
+                        dnl -- http://lists.gnu.org/archive/html/autoconf/2009-03/msg00040.html
+                        eval export $shlibpath_var=$bdblibdir
                         NETATALK_BDB_TRY_LINK
+                        eval export $shlibpath_var=$saved_shlibpath_var
 
                         if test x"${atalk_cv_bdb_version}" = x"yes"; then
                             BDB_CFLAGS="-I${bdbdir}/include${subdir}"
@@ -162,7 +170,9 @@ if test "x$bdb_required" = "xyes"; then
                            CPPFLAGS="-I${bdbdir}/include${subdir} $CPPFLAGS"
                            LDFLAGS="-L$bdblibdir $LDFLAGS"
 
+                           eval export $shlibpath_var=$bdblibdir
                            NETATALK_BDB_TRY_LINK
+                           eval export $shlibpath_var=$saved_shlibpath_var
 
                            if test x"${atalk_cv_bdb_version}" = x"yes"; then
                               BDB_CFLAGS="-I${bdbdir}/include${subdir}"

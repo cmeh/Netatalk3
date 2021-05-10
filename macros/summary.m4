@@ -10,7 +10,7 @@ AC_DEFUN([AC_NETATALK_CONFIG_SUMMARY], [
 	AC_MSG_RESULT([    UAMS:])
 	uams_using_options=""
 	if test x"$netatalk_cv_use_pam" != x"no"; then
-        	uams_using_options="PAM"
+        		uams_using_options="PAM"
 	fi
 	if test "x$neta_cv_compile_dhx" = "xyes"; then
 		AC_MSG_RESULT([         DHX     ($uams_using_options)])
@@ -22,7 +22,10 @@ AC_DEFUN([AC_NETATALK_CONFIG_SUMMARY], [
 		AC_MSG_RESULT([         Kerberos V])
 	fi
 	AC_MSG_RESULT([    Options:])
+	AC_MSG_RESULT([         Zeroconf support:        $netatalk_cv_zeroconf])
+	AC_MSG_RESULT([         ACL support:             $with_acl_support])
 	AC_MSG_RESULT([         Kerberos support:        $with_kerberos])
+	AC_MSG_RESULT([         LDAP support:            $netatalk_cv_ldap])
 	AC_MSG_RESULT([    Paths:])
 	AC_MSG_RESULT([         Netatalk lockfile:       $ac_cv_netatalk_lock])
 	if test x"$use_pam_so" = x"yes"; then
@@ -46,20 +49,22 @@ AC_DEFUN([AC_NETATALK_LIBS_SUMMARY], [
 	dnl # Display summary of libraries detected
 
 	AC_MSG_RESULT([Compilation summary:])
-	AC_MSG_RESULT([    CFLAGS         = $CFLAGS])
+		AC_MSG_RESULT([    CFLAGS     = $CFLAGS])
+		AC_MSG_RESULT([    LIBS       = $LIBS])
 	if test x"$neta_cv_have_openssl" = x"yes"; then
 		AC_MSG_RESULT([    SSL:])
 		AC_MSG_RESULT([        LIBS   = $SSL_LIBS])
 		AC_MSG_RESULT([        CFLAGS = $SSL_CFLAGS])
 	fi
-    if test x"$neta_cv_have_libgcrypt" = x"yes"; then
-        AC_MSG_RESULT([    LIBGCRYPT:])
-        AC_MSG_RESULT([        LIBS   = $LIBGCRYPT_LIBS])
-        AC_MSG_RESULT([        CFLAGS = $LIBGCRYPT_CFLAGS])
-    fi
+	if test x"$neta_cv_have_libgcrypt" = x"yes"; then
+		AC_MSG_RESULT([    LIBGCRYPT:])
+		AC_MSG_RESULT([        LIBS   = $LIBGCRYPT_LIBS])
+		AC_MSG_RESULT([        CFLAGS = $LIBGCRYPT_CFLAGS])
+	fi
 	if test x"$netatalk_cv_use_pam" = x"yes"; then
 		AC_MSG_RESULT([    PAM:])
 		AC_MSG_RESULT([        LIBS   = $PAM_LIBS])
+		AC_MSG_RESULT([        CFLAGS = $PAM_CFLAGS])
 	fi
 	if test x"$bdb_required" = x"yes"; then
 		AC_MSG_RESULT([    BDB:])
@@ -71,10 +76,10 @@ AC_DEFUN([AC_NETATALK_LIBS_SUMMARY], [
 		AC_MSG_RESULT([        LIBS   = $GSSAPI_LIBS])
 		AC_MSG_RESULT([        CFLAGS = $GSSAPI_CFLAGS])
 	fi
-	if test x"$netatalk_cv_use_cups" = x"yes"; then
-		AC_MSG_RESULT([    CUPS:])
-		AC_MSG_RESULT([        LIBS   = $CUPS_LIBS])
-		AC_MSG_RESULT([        CFLAGS = $CUPS_CFLAGS])
+	if test x"$netatalk_cv_ldap" = x"yes"; then
+		AC_MSG_RESULT([    LDAP:])
+		AC_MSG_RESULT([        LIBS   = $LDAP_LDFLAGS $LDAP_LIBS])
+		AC_MSG_RESULT([        CFLAGS = $LDAP_CFLAGS])
 	fi
 	AC_MSG_RESULT([    LIBEVENT:])
 		AC_MSG_RESULT([        LIBS   = $EVENT_LIBS])

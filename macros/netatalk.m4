@@ -129,7 +129,7 @@ AC_ARG_ENABLE(debug,
 )
 ])
 
-dnl Check whethe to disable tickle SIGALARM stuff, which eases debugging
+dnl Check whether to disable tickle SIGALARM stuff, which eases debugging
 AC_DEFUN([AC_NETATALK_DEBUGGING], [
 AC_MSG_CHECKING([whether to enable debugging with debuggers])
 AC_ARG_ENABLE(debugging,
@@ -236,6 +236,159 @@ AC_ARG_ENABLE(overwrite,
 )
 AC_MSG_RESULT([$OVERWRITE_CONFIG])
 AC_SUBST(OVERWRITE_CONFIG)
+])
+
+dnl Check for LDAP support, for client-side ACL visibility
+AC_DEFUN([AC_NETATALK_LDAP], [
+AC_MSG_CHECKING(for LDAP (necessary for client-side ACL visibility))
+AC_ARG_WITH(ldap,
+    [AS_HELP_STRING([--with-ldap[[=PATH]]],
+        [LDAP support (default=auto)])],
+        netatalk_cv_ldap=$withval,
+        netatalk_cv_ldap=auto
+        )
+AC_MSG_RESULT($netatalk_cv_ldap)
+
+save_CFLAGS="$CFLAGS"
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+CFLAGS=""
+LDFLAGS=""
+LIBS=""
+LDAP_CFLAGS=""
+LDAP_LDFLAGS=""
+LDAP_LIBS=""
+
+if test x"$netatalk_cv_ldap" != x"no" ; then
+   if test x"$netatalk_cv_ldap" != x"yes" -a x"$netatalk_cv_ldap" != x"auto"; then
+       CFLAGS="-I$netatalk_cv_ldap/include"
+       LDFLAGS="-L$netatalk_cv_ldap/lib"
+   fi
+       AC_CHECK_HEADER([ldap.h], netatalk_cv_ldap=yes,
+        [ if test x"$netatalk_cv_ldap" = x"yes" ; then
+            AC_MSG_ERROR([Missing LDAP headers])
+        fi
+        netatalk_cv_ldap=no
+        ])
+    AC_CHECK_LIB(ldap, ldap_init, netatalk_cv_ldap=yes,
+        [ if test x"$netatalk_cv_ldap" = x"yes" ; then
+            AC_MSG_ERROR([Missing LDAP library])
+        fi
+        netatalk_cv_ldap=no
+        ])
+fi
+
+if test x"$netatalk_cv_ldap" = x"yes"; then
+    LDAP_CFLAGS="$CFLAGS"
+    LDAP_LDFLAGS="$LDFLAGS"
+    LDAP_LIBS="-lldap"
+    AC_DEFINE(HAVE_LDAP,1,[Whether LDAP is available])
+fi
+
+AC_SUBST(LDAP_CFLAGS)
+AC_SUBST(LDAP_LDFLAGS)
+AC_SUBST(LDAP_LIBS)
+CFLAGS="$save_CFLAGS"
+LDFLAGS="$save_LDFLAGS"
+LIBS="$save_LIBS"
+])
+
+dnl Check for ACL support
+AC_DEFUN([AC_NETATALK_ACL], [
+ac_cv_have_acls=no
+AC_MSG_CHECKING(whether to support ACLs)
+AC_ARG_WITH(acls,
+    [AS_HELP_STRING([--with-acls],
+        [Include ACL support (default=auto)])],
+    [ case "$withval" in
+      yes|no)
+          with_acl_support="$withval"
+          ;;
+      *)
+          with_acl_support=auto
+          ;;
+      esac ],
+    [with_acl_support=auto])
+AC_MSG_RESULT($with_acl_support)
+
+if test x"$with_acl_support" = x"no"; then
+    AC_MSG_RESULT(Disabling ACL support)
+fi
+
+if test x"$with_acl_support" != x"no" -a x"$ac_cv_have_acls" != x"yes" ; then
+    # Runtime checks for POSIX ACLs
+    AC_CHECK_LIB(acl,acl_get_file,[ACL_LIBS="$ACL_LIBS -lacl"])
+    case "$host_os" in
+    *linux*)
+        AC_CHECK_LIB(attr,getxattr,[ACL_LIBS="$ACL_LIBS -lattr"])
+        ;;
+    esac
+
+    AC_CACHE_CHECK([for POSIX ACL support],netatalk_cv_HAVE_POSIX_ACLS,[
+        acl_LIBS=$LIBS
+        LIBS="$LIBS $ACL_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+            #include <sys/types.h>
+            #include <sys/acl.h>
+        ]], [[
+            acl_t acl;
+            int entry_id;
+            acl_entry_t *entry_p;
+            return acl_get_entry(acl, entry_id, entry_p);
+        ]])],
+            [netatalk_cv_HAVE_POSIX_ACLS=yes; ac_cv_have_acls=yes],
+            [netatalk_cv_HAVE_POSIX_ACLS=no; ac_cv_have_acls=no]
+        )
+        LIBS=$acl_LIBS
+    ])
+
+    if test x"$netatalk_cv_HAVE_POSIX_ACLS" = x"yes"; then
+        AC_MSG_NOTICE(Using POSIX ACLs)
+        AC_DEFINE(HAVE_POSIX_ACLS,1,[Whether POSIX ACLs are available])
+
+        AC_CACHE_CHECK([for acl_get_perm_np],netatalk_cv_HAVE_ACL_GET_PERM_NP,[
+            acl_LIBS=$LIBS
+            LIBS="$LIBS $ACL_LIBS"
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+                #include <sys/types.h>
+                #include <sys/acl.h>
+            ]], [[
+                acl_permset_t permset_d;
+                acl_perm_t perm;
+                return acl_get_perm_np(permset_d, perm);
+            ]])],[netatalk_cv_HAVE_ACL_GET_PERM_NP=yes],[netatalk_cv_HAVE_ACL_GET_PERM_NP=no])
+            LIBS=$acl_LIBS
+        ])
+        if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
+            AC_DEFINE(HAVE_ACL_GET_PERM_NP,1,[Whether acl_get_perm_np() is available])
+        fi
+
+        AC_CACHE_CHECK([for acl_from_mode], netatalk_cv_HAVE_ACL_FROM_MODE,[
+            acl_LIBS=$LIBS
+            LIBS="$LIBS $ACL_LIBS"
+            AC_CHECK_FUNCS(acl_from_mode,
+                [netatalk_cv_HAVE_ACL_FROM_MODE=yes],
+                [netatalk_cv_HAVE_ACL_FROM_MODE=no]
+            )
+            LIBS=$acl_LIBS
+        ])
+        if test x"netatalk_cv_HAVE_ACL_FROM_MODE" = x"yes"; then
+           AC_DEFINE(HAVE_ACL_FROM_MODE,1,[Whether acl_from_mode() is available])
+        fi
+    fi
+fi
+
+if test x"$ac_cv_have_acls" = x"no" ; then
+    if test x"$with_acl_support" = x"yes" ; then
+        AC_MSG_ERROR(ACL support requested but not found)
+    else
+        AC_MSG_NOTICE(ACL support is not avaliable)
+    fi
+else
+    AC_CHECK_HEADERS([acl/libacl.h])
+    AC_DEFINE(HAVE_ACLS,1,[Whether ACLs support is available])
+fi
+AC_SUBST(ACL_LIBS)
 ])
 
 dnl Check for Extended Attributes support
